@@ -1,13 +1,16 @@
 package com.ronsong.storage.utils;
 
+import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
+import io.minio.http.Method;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author ronsong
@@ -32,5 +35,19 @@ public class MinioUtil {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public String getUrl(String fileName, int time, TimeUnit timeUnit) {
+        try {
+            return minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+                    .method(Method.GET)
+                    .bucket(bucketName)
+                    .object(fileName)
+                    .expiry(time, timeUnit)
+                    .build());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }
