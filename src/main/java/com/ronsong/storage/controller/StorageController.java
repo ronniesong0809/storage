@@ -7,7 +7,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * @author ronsong
@@ -18,13 +22,16 @@ public class StorageController {
     private MinioUtil minioUtil;
 
     @PostMapping("/upload")
-    public ResponseEntity<Object> upload(@RequestParam("file") MultipartFile file, @RequestParam("fileName") String fileName) {
-        minioUtil.upload(file, fileName);
-        String url = minioUtil.getUrl(fileName, 7 , TimeUnit.DAYS);
+    public ResponseEntity<Object> upload(@RequestParam("file") MultipartFile[] file) {
+        List<String> fileNames = minioUtil.upload(file);
+
+        Map<String, String> fileNamesMap = fileNames.stream()
+                .map(fileName -> new String[] {fileName, minioUtil.getUrl(fileName, 7 , TimeUnit.DAYS)})
+                .collect(Collectors.toMap(url -> url[0], url -> url[1]));
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(url);
+                .body(fileNamesMap);
     }
 
     @GetMapping("/{fileName}")

@@ -1,8 +1,6 @@
 package com.ronsong.storage.utils;
 
-import io.minio.GetPresignedObjectUrlArgs;
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
+import io.minio.*;
 import io.minio.http.Method;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,6 +8,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -23,18 +23,34 @@ public class MinioUtil {
     @Value("${MINIO_BUCKET_NAME}")
     private String bucketName;
 
-    public void upload(MultipartFile file, String fileName) {
-        try {
-            InputStream inputStream = file.getInputStream();
-            minioClient.putObject(PutObjectArgs.builder()
-                    .bucket(bucketName)
-                    .object(fileName)
-                    .stream(inputStream, file.getSize(), -1)
-                            .contentType(file.getContentType())
-                            .build());
-        } catch (Exception e) {
-            e.printStackTrace();
+    public List<String> upload(MultipartFile[] multipartFile) {
+        List<String> fileNames = new ArrayList<>(multipartFile.length);
+
+        for (MultipartFile file : multipartFile) {
+            String fileName = file.getOriginalFilename();
+            InputStream inputStream = null;
+            try {
+                inputStream = file.getInputStream();
+                minioClient.putObject(PutObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(fileName)
+                        .stream(inputStream, file.getSize(), -1)
+                        .contentType(file.getContentType())
+                        .build());
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (inputStream != null) {
+                    try {
+                        inputStream.close();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            fileNames.add(fileName);
         }
+        return fileNames;
     }
 
     public String getUrl(String fileName, int time, TimeUnit timeUnit) {
