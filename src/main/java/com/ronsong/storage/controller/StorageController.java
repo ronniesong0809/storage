@@ -25,9 +25,9 @@ public class StorageController {
     public ResponseEntity<Object> upload(@RequestParam("file") MultipartFile[] file) {
         List<String> fileNames = minioUtil.upload(file);
 
-        Map<String, String> fileNamesMap = fileNames.stream()
-                .map(fileName -> new String[] {fileName, minioUtil.getUrl(fileName, 7 , TimeUnit.DAYS)})
-                .collect(Collectors.toMap(url -> url[0], url -> url[1]));
+        List<Map<String, String>> fileNamesMap = fileNames.stream()
+                .map(fileName -> Map.of("fileName", fileName, "url", minioUtil.getUrl(fileName, 7 , TimeUnit.DAYS)))
+                .collect(Collectors.toList());
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
